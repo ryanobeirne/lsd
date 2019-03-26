@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{App, Arg, SubCommand, ArgMatches};
 
 pub fn build() -> App<'static, 'static> {
     App::new("lsd")
@@ -134,4 +134,31 @@ pub fn build() -> App<'static, 'static> {
                 .long("classic")
                 .help("Enable classic mode (no colors or icons)"),
         )
+        .subcommand(
+            SubCommand::with_name("completion")
+                .about("Generate completions for your shell")
+                .alias("completions")
+                .arg(
+                    Arg::with_name("shell")
+                    .possible_values(&["bash", "zsh", "fish", "powershell", "elvish"])
+                    .required(true)
+                )
+        )
+}
+
+pub fn do_subcmd(app: &mut App, subname: &str, subcmd: &ArgMatches) {
+    match subname {
+        "completion" => {
+            let stdout = &mut std::io::stdout();
+            match subcmd.value_of("shell").unwrap() {
+                "bash"       => app.gen_completions_to("lsd", clap::Shell::Bash, stdout),
+                "zsh"        => app.gen_completions_to("lsd", clap::Shell::Zsh, stdout),
+                "fish"       => app.gen_completions_to("lsd", clap::Shell::Fish, stdout),
+                "powershell" => app.gen_completions_to("lsd", clap::Shell::PowerShell, stdout),
+                "elvish"     => app.gen_completions_to("lsd", clap::Shell::Elvish, stdout),
+                _ => unreachable!(),
+            }
+        }
+        _ => unreachable!(),
+    }
 }
