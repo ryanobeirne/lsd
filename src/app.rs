@@ -136,7 +136,9 @@ pub fn build() -> App<'static, 'static> {
         )
         .subcommand(
             SubCommand::with_name("completion")
-                .about("Generate completions for your shell")
+                .about("Generate completions for your shell.")
+                .long_about("Prints shell completions to STDOUT. Redirect to your completion directory:
+    lsd completions bash | sudo tee /usr/share/bash-completion/completions")
                 .alias("completions")
                 .arg(
                     Arg::with_name("shell")
@@ -146,18 +148,34 @@ pub fn build() -> App<'static, 'static> {
         )
 }
 
-pub fn do_subcmd(app: &mut App, subname: &str, subcmd: &ArgMatches) {
+/// Check for SubCommand then do it if present.
+/// If Some(i32) is returned, we'll exit(i32).
+/// Otherwise, we'll continue.
+pub fn check_subcmd(matches: &ArgMatches) {
+    if let (subname, Some(subcmd)) = matches.subcommand() {
+        if let Some(status) = do_subcmd(&mut build(), subname, subcmd) {
+            std::process::exit(status);
+        }
+    }
+}
+
+/// Do the SubCommand. Return Some(i32) if you want to exit(i32).
+/// Otherwise we'll continue.
+fn do_subcmd(app: &mut App, subname: &str, subcmd: &ArgMatches) -> Option<i32> {
+    // If you want to exit the program after running the subcommand, return Some(i32)
+    // Otherwise, return None
     match subname {
         "completion" => {
             let stdout = &mut std::io::stdout();
             match subcmd.value_of("shell").unwrap() {
-                "bash"       => app.gen_completions_to("lsd", clap::Shell::Bash, stdout),
-                "zsh"        => app.gen_completions_to("lsd", clap::Shell::Zsh, stdout),
-                "fish"       => app.gen_completions_to("lsd", clap::Shell::Fish, stdout),
+                "bash"       => app.gen_completions_to("lsd", clap::Shell::Bash,       stdout),
+                "zsh"        => app.gen_completions_to("lsd", clap::Shell::Zsh,        stdout),
+                "fish"       => app.gen_completions_to("lsd", clap::Shell::Fish,       stdout),
                 "powershell" => app.gen_completions_to("lsd", clap::Shell::PowerShell, stdout),
-                "elvish"     => app.gen_completions_to("lsd", clap::Shell::Elvish, stdout),
+                "elvish"     => app.gen_completions_to("lsd", clap::Shell::Elvish,     stdout),
                 _ => unreachable!(),
             }
+            Some(0)
         }
         _ => unreachable!(),
     }

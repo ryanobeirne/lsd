@@ -35,10 +35,8 @@ use std::path::PathBuf;
 fn main() {
     let matches = app::build().get_matches();
 
-    if let (subname, Some(subcmd)) = matches.subcommand() {
-        app::do_subcmd(&mut app::build(), subname, subcmd);
-        return;
-    }
+    // Do the SubCommand if present.
+    app::check_subcmd(&matches);
 
     let inputs = matches
         .values_of("FILE")
